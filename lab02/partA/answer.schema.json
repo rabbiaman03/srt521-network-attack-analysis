@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "ip": {"type": "string", "description": "the source IP with the most failed SSH password attempts"},
+    "count": {"type": "integer", "description": "how many failed password attempts came from it", "minimum": 0}
+  },
+  "required": ["ip", "count"],
+  "additionalProperties": false
+}
