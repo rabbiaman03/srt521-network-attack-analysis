@@ -1,54 +1,53 @@
-# Lab 1 report
+# Lab 01 — Coordinating Two AI Agents for Log Analysis
 
-Student: Rabbi Muhammad Aman, section NAA
+**Author:** Rabbi Muhammad Aman · **Course:** SRT521 · **Date:** 2026-09-19
 
-## Version block
+## Overview
+Two LLM coding agents ran side by side in a terminal multiplexer (herdr), each with its own task brief. They coordinated only through files in a shared `mailbox/` directory:
 
-Copy the output of the four commands as the recording shows it (a command may print more than one line):
+| Agent | Model | Task | Output |
+|---|---|---|---|
+| **alpha** | Claude | Find the top web-probing IPs in `access.log` | [`alpha/web_probes.py`](alpha/web_probes.py) → [`alpha/output.json`](alpha/output.json) |
+| **beta** | Gemini | (A) Analyze blocked ports in `firewall.log`; (B) wait for alpha, then merge both results into a report | [`beta/blocked_ports.py`](beta/blocked_ports.py), [`beta/make_report.py`](beta/make_report.py) → [`beta/report.json`](beta/report.json) |
 
+My job was the orchestration: I wrote the [plan](PLAN.md) and the task briefs ([task1](tasks/task1.md), [task2](tasks/task2.md)), set the boundaries each agent had to respect, and designed the hand-off and fallback logic.
+
+## Environment
 ```
-<date>
 Sat Sep 19 12:40:13 EDT 2026
-<herdr --version, tmux -V, or screen --version>
 herdr 0.9.1
-<python3 --version>
 Python 3.12.3
-<git log --oneline -1>
-992a8ea (HEAD -> main, origin/main) Lab 01 work
+992a8ea Lab 01 work
 ```
-
-## Recording
-
-Recording submitted to the instructor (not public).
-
-Recorded on the host: <Windows 11>. Multiplexer: <herdr 0.8>. Agents: alpha = <claude>, beta = <gemini>.
+Host: Windows 11 with WSL Ubuntu. Multiplexer: herdr. Agents: alpha = Claude, beta = Gemini.
 
 ## Results
 
 | | alpha, task 1 | beta, task 2 |
 |---|---|---|
-| Prompts and permission responses, every one (each prompt five words or fewer) | `start task 1` | `Start task 2`, then "Y" to all permission to do task 2 |
+| Prompts given | `start task 1` | `Start task 2`, then approved each permission request |
+| `check.py` validation | `output.json`: **PASS** | `blocked.json`: **PASS** · `report.json`: **PASS** |
+| Clarifying questions | none | none (asked for 7 permissions) |
+| Hand-off message | [`task1-done.md`](mailbox/task1-done.md) | [`task2-done.md`](mailbox/task2-done.md) |
+| Time from start to done | 20 s | 1 min 10 s |
 
-| `check.py` results | output.json: PASS | blocked.json: pass; report.json: pass |
-| Questions it asked before doing |none |none but ask 7 permissions |
-| Messages it wrote to `mailbox/` | task1-done.md|task2-done.md |
-| Elapsed time from Start to done (or stopped without done) |20s |1m10s |
+## Hand-off design
+- Beta starts its independent stage (blocked ports) immediately, then polls for `mailbox/task1-done.md` every 15 s, for at most five 60-second batches.
+- **Fallback A:** if alpha's message never arrives, beta writes `task2-waiting.md` and stops.
+- **Fallback B:** if alpha reports failure or its JSON is invalid, beta keeps its own results and writes `task 2 partial`.
+
 ## Reflection
+The plan held. Alpha (Claude) finished first without needing any permissions. Beta (Gemini) asked for seven permission confirmations before writing files. When `task1-done.md` appeared, beta was still working through its permission prompts on stage A. Once they were approved, it picked up alpha's result and finished stage B, so neither fallback ran.
 
-150 to 250 words, answering with specifics from your session:
+**Next time:** I will paste each spec's exact JSON key names and value types into the task brief instead of pointing the agent at `specs/*.md`. That removes the risk of an agent misreading the schema.
 
-1. Where your plan held and where it broke: what each agent did that its task file did not foresee, and what you changed in the files between the rehearsal and the recorded run.
-It did not break anywhere. My alpha which was claude ai agent did not ask for any permission and did it first. My gemini, meanwhile asked for permissions prompt which I just di "Yes,Commit".
-2. How the hand-off went: when `task1-done.md` appeared, what beta was doing at that moment, and whether the fallback ran.
-when my task1-done.md was done. I was checking if task2 was breaking anything or not. But task2 was not done and it was asking for permissions. It asked 7 permissions which I approved. Then after sometimes task2 was also done. When I found both tasks were done in mailbox, I confirmed tasks were completed. 
-3. One thing you will change in your task files or your plan for the next lab.
-Next time I will paste the spec's exact JSON key names and value types directly into the next brief, instead of pointing the agent at specs/web_probes.md and trusting it to interept them.
+## Run the checks
+```bash
+cd lab01
+python3 check.py alpha/output.json
+python3 check.py --blocked beta/blocked.json
+python3 check.py --report beta/report.json
+```
+
 ## AI use
-### Tools used, and how
-I used alpha as claude and gemini as beta. I run them in my host machine using ubuntu (wsl) cmd.
-### Prompts you wrote
-start task1 in claude and start task2 in gemini,
-### Results the AI produced
-Alpha created web_probes.py and output.json. beta created blocked_ports.py, blocked.json,make_report.py and report.json and mailbox messages. 
-### How the results went into the submission
-I checked the mailbox and can see both tasks were finished and saw tasks completion message. 
+Alpha (Claude) and beta (Gemini) wrote all of the scripts, the JSON outputs and the mailbox messages, which are committed unedited. Claude Code helped me draft the plan and task briefs before the run. The results and reflection are my own account.

@@ -1,10 +1,8 @@
-# Lab 2, part B report
+# Lab 02 B — Context Management: Clipping and Windowing Tool Output
 
-Student: Rabbi Muhammad Aman, section NAA
+**Author:** Rabbi Muhammad Aman · **Course:** SRT521
 
-## Version block
-
-Copy the output of the four commands as the recording shows it (a command may print more than one line):
+## Version info
 
 ```
 Wed Oct  7 04:09:16 EDT 2026
@@ -13,9 +11,7 @@ Python 3.12.3
 71acaee Lab 02b plan
 ```
 
-## Recording
-
-Recording submitted to the instructor (not public).
+## Environment
 
 Recorded on the host: Windows 11 (WSL Ubuntu-24.04). Multiplexer: tmux 3.4. Editor: nano. Coding agent in a pane: none.
 
@@ -49,11 +45,11 @@ What you read in your own code to find these places: The dispatch() docstring (P
 | Characters in the serialized tool message for the `grep` listing, from the trace | 10,772 chars (step 1, `grep "Failed password" auth.log`) | 2,893 chars (step 1, `grep "Failed password" auth.log`) |
 | `window` events: at which steps, and what they left out | none | step 5: 1 result(s), 2,893 chars<br>step 6: 2 result(s), 2,928 chars |
 
-What the clip hid, and whether the model needed any of it. If the live model did not request the full listing, write that and cite the trace:
+What the clip hid, and whether the model needed any of it. 
 
 In the after run the `grep` listing at step 1 was clipped: the tool message is 2,893 characters instead of 10,772 in the before run, and the line `[... 7,840 characters elided ...]` replaced the middle of the listing (show.py prints it under that observation). The model kept the first 2,000 and the last 800 characters. It did not need the hidden lines: the four counts came from separate `grep -c` commands, not from the listing.
 
-What the window left out that the model still needed, and what the model did about it (the trace lines that show it). If no window event occurred, write `none observed` and explain why the run ended before one:
+What the window left out that the model still needed, and what the model did about it (the trace lines that show it). 
 
 The window first left results out before step 5: `[step 5] window: {"elided": 1, "chars": 2893}`; `[step 6] window: {"elided": 2, "chars": 2928}`. By the last call it had hidden `grep "Failed password" auth.log`, `grep -c "Failed password" auth.log`. The model did not run any command again after the window. The final answer is missing or wrong for Failed password, whose count result the window had hidden: the model needed it and had not restated it. 
 
@@ -66,7 +62,7 @@ The manual checks give Failed password 102; Accepted publickey 33; Accepted pass
 ### Tools used, and how
 I used Claude Code in the Claude desktop app (Code tab), model Claude Opus 5.5, in a separate window before the recording; it was not on camera and did not run in a pane. It explained the part B handout, copied `try_context.py` from the handout, drafted `plan.md` (including the four where/why lines, written from my finished code), wrote the setup, rehearsal and recording command list, and wrote `make_report_b.py`.
 
-### Prompts you wrote
+### Prompts I wrote
 1. *"In Python, how do I truncate a string longer than 3,000 characters to keep the first 2,000 and last 800 characters, calculate the omitted length, and format the omitted number with thousands commas (e.g., 7,200) surrounded by newlines?"*
 2. *"I have a tool function that might return either a string or a dict with an 'output' field. How can I safely clip only the 'output' field if it is a dict, preserve other keys like 'exit_code', and return valid JSON?"*
 3. *"Given a list of message dicts with role and content, how can I find all tool messages, identify all except the 3 most recent, sum the character count of their content, and build a new list with replacement placeholders without modifying the original dicts in the master list?"*
